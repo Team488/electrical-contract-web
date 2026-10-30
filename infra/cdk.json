@@ -1,0 +1,13 @@
+{
+  "app": "npx tsx bin/app.ts",
+  "context": {
+    "region": "us-west-2",
+    "allowedOrigins": "https://team488.github.io,http://localhost:8000",
+    "ssmPrefix": "/electrical-contract/",
+    "alertEmail": "",
+    "monthlyBudgetUsd": 5,
+    "reservedConcurrency": "",
+    "githubRepo": "Team488/electrical-contract-web",
+    "createGithubOidcProvider": true
+  }
+}

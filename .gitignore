@@ -1,0 +1,6 @@
+node_modules/
+.local/
+tools/
+api/.env
+infra/cdk.out/
+*.log

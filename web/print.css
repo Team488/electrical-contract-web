@@ -1,0 +1,11 @@
+body { margin: 16px; font-family: system-ui, sans-serif; background: #fff; color: #111; }
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.toolbar button { font: inherit; padding: 6px 12px; border: 1px solid #888; border-radius: 6px; background: #f4f4f4; cursor: pointer; }
+#status { color: #555; font-size: 0.9em; }
+pre { font: 11px/1.35 ui-monospace, Consolas, "Courier New", monospace; white-space: pre; overflow-x: auto; }
+@media print {
+  .toolbar { display: none; }
+  body { margin: 0; }
+  pre { font-size: 9pt; overflow: visible; }
+  @page { margin: 12mm; }
+}
