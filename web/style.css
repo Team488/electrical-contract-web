@@ -65,6 +65,9 @@ h3 { font-size: 0.95em; margin: 16px 0 6px; }
 nav { display: flex; gap: 2px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tab { border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 10px 12px; white-space: nowrap; }
 .tab.active { border-bottom-color: var(--accent); font-weight: 600; }
+select.robot { font: inherit; font-weight: 700; border: none; background: none; padding: 0 2px; max-width: 70vw; }
+.tag { background: var(--info-bg); color: var(--info); border-radius: 8px; padding: 0 6px; font-size: 0.75em; font-weight: 600; }
+.warn-box { background: var(--warn-bg); border-radius: 6px; padding: 8px 10px; font-size: 0.9em; }
 .badge { background: var(--error); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 0.8em; }
 
 main { padding: 16px; max-width: 1200px; margin: 0 auto; }

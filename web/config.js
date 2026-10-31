@@ -5,5 +5,6 @@ const HOSTED_API = "https://iqzxovxrrtmrmj7luwdtc457c40lyehm.lambda-url.us-west-
 const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
 
 export const API_BASE = isLocal ? `${location.protocol}//${location.hostname}:8787` : HOSTED_API;
+/** Robot shown on a first visit; the header picker switches robots after that. */
 export const ROBOT_ID = 1;
 export const POLL_SECONDS = 10;

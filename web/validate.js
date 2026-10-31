@@ -83,6 +83,10 @@ export function runChecks(model) {
     }
   }
 
+  if (model.disabled.length) {
+    add("info", "Code", `${model.disabled.length} code device${model.disabled.length > 1 ? "s are" : " is"} not on this robot (mechanism turned off in its contract); see the CAN tab`);
+  }
+
   const open = state.proposals.filter((p) => p.status === "open").length;
   if (open) add("info", "Code", `${open} proposed code change${open > 1 ? "s" : ""} waiting for a programmer`);
 

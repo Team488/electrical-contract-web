@@ -6,6 +6,7 @@
 import { checkPasscode, checkSnapshotKey, issueToken, verifyToken } from "./auth.ts";
 import type { Config } from "./config.ts";
 import type { Store } from "./store.ts";
+import { checkShape } from "./snapshot.ts";
 import { HttpError, type Row, type Snapshot } from "./types.ts";
 
 const KINDS = ["motor", "can_sensor", "dio", "pwm", "vrm", "converter", "load"];
@@ -104,6 +105,15 @@ const routes: [string, RegExp, Handler][] = [
   ["POST", /^\/api\/robots\/(\d+)\/snapshot$/, async (req, { store, config }, m) => {
     if (!checkSnapshotKey(config, req.headers.get("x-snapshot-key"))) throw new HttpError(403, "Bad snapshot key");
     return store.importSnapshot(+m[1], (await req.json()) as Snapshot);
+  }],
+
+  // CI/import entry point: picks (or creates) the robot by its ContractToUse name.
+  ["POST", /^\/api\/contracts\/([A-Za-z0-9_-]{1,30})\/snapshot$/, async (req, { store, config }, m) => {
+    if (!checkSnapshotKey(config, req.headers.get("x-snapshot-key"))) throw new HttpError(403, "Bad snapshot key");
+    const snap = (await req.json()) as Snapshot;
+    checkShape(snap);
+    const robotId = await store.robotForContract(m[1], snap);
+    return { robotId, ...(await store.importSnapshot(robotId, snap)) };
   }],
 
   ["POST", /^\/api\/robots\/(\d+)\/devices$/, async (req, deps, m) => {

@@ -1,6 +1,6 @@
 # Local demo: DynamoDB Local on :8001, API (same code as the Lambda) on :8787,
 # static site on :8000. No AWS account needed.
-#   -Snapshot      regenerate the snapshot from ../TeamXbot2026 and import it
+#   -Snapshot      export every robot's contract from ../TeamXbot2026 and import them
 #   -Reset         wipe the local database first (fresh seed from the snapshot)
 #   -Lan           listen on all interfaces so phones/laptops on the same network can connect
 param([switch]$Snapshot, [switch]$Reset, [switch]$Lan)
@@ -10,8 +10,6 @@ $apiDir = Join-Path $root 'api'
 $local = Join-Path $root '.local'
 $dataDir = Join-Path $local 'dynamodb'
 $ddbDir = Join-Path $root 'tools\dynamodb-local'
-$robotRepo = Join-Path (Split-Path $root -Parent) 'TeamXbot2026'
-$snapFile = Join-Path $local 'snapshot.json'
 
 & (Join-Path $PSScriptRoot 'get-dynamodb-local.ps1')
 if (-not (Test-Path (Join-Path $apiDir '.env'))) {
@@ -49,9 +47,7 @@ try {
 
     $state = Invoke-RestMethod http://127.0.0.1:8787/api/robots/1
     if ($Snapshot -or -not $state.snapshot) {
-        Push-Location $robotRepo
-        try { ./gradlew electricalReport -q --args="--json -f $snapFile" } finally { Pop-Location }
-        node (Join-Path $PSScriptRoot 'import-snapshot.mjs') $snapFile http://127.0.0.1:8787
+        & (Join-Path $PSScriptRoot 'sync-contracts.ps1') -Api http://127.0.0.1:8787
     }
 
     Write-Host ''

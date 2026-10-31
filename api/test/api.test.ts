@@ -5,6 +5,8 @@ import { DynamoStore } from "../src/dynamo-store.ts";
 import { createHandler } from "../src/handlers.ts";
 import { createTableIfMissing, ensureRobot } from "../src/table.ts";
 import snapshot from "./fixtures/snapshot-2026.json" with { type: "json" };
+import snapshot2023 from "./fixtures/snapshot-2023.json" with { type: "json" };
+import snapshotRobox from "./fixtures/snapshot-robox.json" with { type: "json" };
 
 const BASE = "http://local";
 const config: Config = {
@@ -226,5 +228,60 @@ describe("DynamoDB specifics", () => {
     expect(ids.every((id: unknown) => Number.isInteger(id))).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);
     expect(s.devices.some((d: any) => String(d.supply).includes("tmp"))).toBe(false);
+  });
+});
+
+describe("several robots", () => {
+  const post = (contract: string, snap: unknown) => api(`/api/contracts/${contract}/snapshot`, {
+    method: "POST", body: JSON.stringify(snap), headers: { "x-snapshot-key": "test-key" },
+  });
+
+  it("imports each contract into its own robot, creating new ones as needed", async () => {
+    const competition = (await (await post("Competition", snapshot)).json()) as any;
+    expect(competition.robotId).toBe(1);
+    const robot2023 = (await (await post("2023", snapshot2023)).json()) as any;
+    expect(robot2023.robotId).toBe(2);
+    const robox = (await (await post("Robox", snapshotRobox)).json()) as any;
+    expect(robox.robotId).toBe(3);
+    // Re-importing finds the same robot.
+    expect(((await (await post("2023", snapshot2023)).json()) as any).robotId).toBe(2);
+
+    const robots = (await (await api("/api/robots")).json()) as any[];
+    expect(robots.map((r) => [r.id, r.contract_name, r.name])).toEqual([
+      [1, "Competition", "2026 Competition"], [2, "2023", "2023 Robot"], [3, "Robox", "Robox"],
+    ]);
+    expect(robots[1]).toMatchObject({ season: 2023, contract_class: "Contract2023", controller: "roborio" });
+
+    // Each robot has its own devices and its own empty ports.
+    const s2023 = (await (await api("/api/robots/2")).json()) as any;
+    expect(s2023.devices.filter((d: any) => d.code_key)).toHaveLength(snapshot2023.canDevices.length);
+    expect(s2023.ports).toHaveLength(32);
+    expect(s2023.robot.contract_name).toBe("2023");
+  });
+
+  it("keeps edits on one robot off the others", async () => {
+    await post("Competition", snapshot);
+    await post("2023", snapshot2023);
+    const t = await login();
+    await api("/api/robots/2/ports/PDH03", {
+      method: "PATCH", token: t, body: JSON.stringify({ version: 1, changes: { breaker_a: 40 } }),
+    });
+    const ports = async (id: number) => ((await (await api(`/api/robots/${id}`)).json()) as any).ports.find((p: any) => p.port === "PDH03");
+    expect((await ports(2)).breaker_a).toBe(40);
+    expect((await ports(1)).breaker_a).toBeNull();
+  });
+
+  it("records which Java class defines each device", async () => {
+    await post("Robox", snapshotRobox);
+    const s = (await (await api("/api/robots/2")).json()) as any;
+    const byClass = new Set(s.devices.filter((d: any) => d.code_key).map((d: any) => d.defined_in));
+    expect(byClass).toContain("GeneralContract");
+    expect(byClass).toContain("RoboxContract");
+  });
+
+  it("rejects a bad contract name or key", async () => {
+    expect((await post("bad name!", snapshot)).status).toBe(404);
+    const r = await api("/api/contracts/2023/snapshot", { method: "POST", body: JSON.stringify(snapshot2023), headers: { "x-snapshot-key": "nope" } });
+    expect(r.status).toBe(403);
   });
 });

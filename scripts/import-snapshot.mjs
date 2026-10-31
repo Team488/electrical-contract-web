@@ -1,5 +1,6 @@
 // Send a Java contract snapshot to the API.
 // Usage: node scripts/import-snapshot.mjs <snapshot.json> [apiBase]
+// The robot is chosen by the snapshot's contractName (created on first import).
 // Key: SNAPSHOT_KEY env var, else api/.env.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -17,10 +18,14 @@ if (!key) {
   key = readFileSync(envFile, "utf8").match(/^SNAPSHOT_KEY=(.*)$/m)?.[1]?.trim();
 }
 
-const res = await fetch(`${base}/api/robots/1/snapshot`, {
+// Snapshots name their robot (ContractToUse); older ones without a name go to robot 1.
+const body = readFileSync(file, "utf8");
+const contract = JSON.parse(body).contractName;
+const url = contract ? `${base}/api/contracts/${encodeURIComponent(contract)}/snapshot` : `${base}/api/robots/1/snapshot`;
+const res = await fetch(url, {
   method: "POST",
   headers: { "content-type": "application/json", "x-snapshot-key": key },
-  body: readFileSync(file, "utf8"),
+  body,
 });
 const out = await res.json();
 console.log(res.status, out);

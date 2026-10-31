@@ -39,6 +39,10 @@ export function buildModel(state) {
     canDevices: (bus) => state.devices
       .filter((d) => d.code_key?.startsWith(`can:${bus}:`))
       .sort((a, b) => canIdOf(a) - canIdOf(b)),
+    /** Defined by a class other than this robot's own contract (e.g. GeneralContract), so other robots share it. */
+    isShared: (d) => Boolean(d.defined_in) && d.defined_in !== state.robot.contract_class,
+    /** Code devices whose mechanism this robot's contract turns off. */
+    disabled: snap?.disabled ?? [],
     sources: () => state.devices.filter((d) => SOURCE_KINDS.includes(d.kind)).sort((a, b) => a.name.localeCompare(b.name)),
     supplyLabel: (supply) => supplyLabel(supply, byId),
   };

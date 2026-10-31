@@ -1,4 +1,4 @@
-import { API_BASE, ROBOT_ID } from "./config.js";
+import { API_BASE, ROBOT_ID as DEFAULT_ROBOT } from "./config.js";
 
 const TOKEN_KEY = "ecw.token";
 
@@ -46,7 +46,13 @@ async function call(method, path, body) {
   return data;
 }
 
-const r = (p = "") => `/api/robots/${ROBOT_ID}${p}`;
+// Which robot this browser is looking at; remembered between visits.
+const ROBOT_KEY = "ecw.robot";
+let robotId = (() => {
+  try { return Number(localStorage.getItem(ROBOT_KEY)) || DEFAULT_ROBOT; } catch { return DEFAULT_ROBOT; }
+})();
+
+const r = (p = "") => `/api/robots/${robotId}${p}`;
 
 export const api = {
   login: async (name, passcode) => {
@@ -59,6 +65,12 @@ export const api = {
     saveLogin(null);
   },
   currentLogin: () => memoryLogin,
+  robots: () => call("GET", "/api/robots"),
+  robotId: () => robotId,
+  setRobot: (id) => {
+    robotId = id;
+    try { localStorage.setItem(ROBOT_KEY, String(id)); } catch { /* remembered for this page only */ }
+  },
   state: () => call("GET", r()),
   rev: () => call("GET", r("/rev")),
   audit: () => call("GET", r("/audit")),

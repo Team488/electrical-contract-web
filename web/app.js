@@ -22,6 +22,7 @@ function App() {
   const [login, setLogin] = useState(api.currentLogin());
   const [dialog, setDialog] = useState(null); // {kind: 'login'|'conflict'|'proposal', ...}
   const [toast, setToast] = useState(null);
+  const [robots, setRobots] = useState([]);
 
   const reload = useCallback(async () => {
     try {
@@ -32,7 +33,23 @@ function App() {
     }
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  // Load the robot list first, so a remembered robot that no longer exists falls back to the first one.
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await api.robots();
+        setRobots(list);
+        if (list.length && !list.some((r) => r.id === api.robotId())) api.setRobot(list[0].id);
+      } catch { /* reload() reports the error */ }
+      reload();
+    })();
+  }, [reload]);
+
+  const pickRobot = (id) => {
+    api.setRobot(id);
+    setState(null);
+    reload();
+  };
 
   // Poll the cheap revision counter; refetch everything only when it moves.
   useEffect(() => {
@@ -94,8 +111,15 @@ function App() {
   return html`
     <header>
       <div class="title">
-        <h1>${state.robot.name} wiring</h1>
+        <h1>
+          ${robots.length > 1
+            ? html`<select class="robot" aria-label="Robot" value=${state.robot.id} onChange=${(e) => pickRobot(Number(e.target.value))}>
+                ${robots.map((r) => html`<option value=${r.id}>${r.name}</option>`)}
+              </select>`
+            : state.robot.name} wiring
+        </h1>
         <span class="meta">
+          ${state.robot.contract_class ?? ""}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""} ·
           Java ${state.snapshot?.git_sha?.slice(0, 7) ?? "—"} · imported ${fmtTime(state.snapshot?.imported_at)} · rev ${state.robot.rev}
         </span>
       </div>
@@ -212,7 +236,11 @@ function ProposalDialog({ device, model, save, onClose }) {
   };
   return html`
     <${Dialog} title=${`Propose a code change: ${device.name}`} onClose=${onClose}>
-      <p class="hint">These fields live in the Java contract. A programmer makes the change there; the next snapshot updates this page.</p>
+      <p class="hint">These fields live in the Java contract. Programming makes the change there; the next snapshot updates this page.</p>
+      ${model.isShared(device) && html`<p class="warn-box">
+        Defined in <b>${device.defined_in}</b>, which other robots' contracts share. Changing it there changes those robots
+        too; Programming can instead override it in <b>${model.state.robot.contract_class}</b> for this robot only.
+      </p>`}
       <form onSubmit=${submit} class="stack">
         <label>What to change
           <select value=${field} onChange=${(e) => setField(e.target.value)}>
@@ -266,8 +294,25 @@ function ChecksTab({ checks }) {
     </ul>`;
 }
 
+/** Marks a field defined in a class other robots share (see the proposal dialog). */
+function SharedTag({ model, device }) {
+  return model.isShared(device)
+    ? html` <span class="tag" title=${`Defined in ${device.defined_in}; other robots' contracts share it`}>shared</span>`
+    : "";
+}
+
+function NotOnRobot({ model }) {
+  if (!model.disabled.length) return "";
+  return html`
+    <section>
+      <h2>Not on this robot <span class="count">${model.disabled.length}</span></h2>
+      <p class="hint">In the code, but this robot's contract turns their mechanism off (readiness set), so the robot doesn't create them.</p>
+      <p>${model.disabled.join(", ")}</p>
+    </section>`;
+}
+
 function CanTab({ model, canEdit, openProposal }) {
-  return model.buses.map((bus) => {
+  return [...model.buses.map((bus) => {
     const devs = model.canDevices(bus);
     const pos = new Map((model.chain(bus)?.order ?? []).map((k, i) => [k, i + 1]));
     return html`
@@ -279,7 +324,8 @@ function CanTab({ model, canEdit, openProposal }) {
             ${devs.map((d) => {
               const c = model.code.get(d.code_key);
               return html`<tr class=${d.in_code ? "" : "removed"}>
-                <td class="num">${canIdOf(d)}</td><td>${d.name}${d.in_code ? "" : html` <em>(removed from code)</em>`}</td>
+                <td class="num">${canIdOf(d)}</td>
+                <td>${d.name}${d.in_code ? "" : html` <em>(removed from code)</em>`}<${SharedTag} model=${model} device=${d} /></td>
                 <td>${c?.type ?? ""}</td><td class="num">${pos.get(d.code_key) ?? "—"}</td>
                 <td>${model.supplyLabel(d.supply)}</td>
                 <td><button class="small" disabled=${!canEdit} onClick=${() => openProposal(d)}>Propose change</button></td>
@@ -288,7 +334,7 @@ function CanTab({ model, canEdit, openProposal }) {
           </tbody>
         </table>
       </section>`;
-  });
+  }), html`<${NotOnRobot} model=${model} />`];
 }
 
 function ChainTab({ model, save, canEdit }) {
@@ -450,7 +496,7 @@ function IoTab({ model, canEdit, openProposal }) {
         <table>
           <thead><tr><th>Channel</th><th>Name</th><th></th></tr></thead>
           <tbody>${devs.map((d) => html`<tr class=${d.in_code ? "" : "removed"}>
-            <td class="num">${d.code_key.split(":")[1]}</td><td>${d.name}</td>
+            <td class="num">${d.code_key.split(":")[1]}</td><td>${d.name}<${SharedTag} model=${model} device=${d} /></td>
             <td><button class="small" disabled=${!canEdit} onClick=${() => openProposal(d)}>Propose change</button></td>
           </tr>`)}</tbody>
         </table>

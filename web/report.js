@@ -22,7 +22,7 @@ export function reportText(model) {
   };
 
   p(RULE); p("Electrical Contract Report"); p(RULE); p();
-  p(`Robot: ${state.robot.name}`);
+  p(`Robot: ${state.robot.name}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""}`);
   p(`Java source: ${snap?.source ?? "(no snapshot)"} @ ${state.snapshot?.git_sha?.slice(0, 7) ?? "?"}`);
   p(`Wiring data revision: ${state.robot.rev}`);
   p(`Printed: ${new Date().toLocaleString()}`);
@@ -88,6 +88,12 @@ export function reportText(model) {
     }
   }
   total(`Total power branches: ${branches}`);
+
+  if (model.disabled.length) {
+    section("Not on this robot (mechanism not in the contract's readiness set)");
+    for (const name of [...model.disabled].sort()) p(`  ${name}`);
+    p();
+  }
 
   const checks = runChecks(model);
   section(`Checks (${checks.filter((c) => c.level === "error").length} errors, ${checks.filter((c) => c.level === "warn").length} warnings)`);

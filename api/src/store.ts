@@ -29,4 +29,6 @@ export interface Store {
   delete(entity: Entity, robotId: number, key: Key, expectedVersion: number, user: string): Promise<void>;
   revert(robotId: number, auditId: string, user: string): Promise<void>;
   importSnapshot(robotId: number, snap: Snapshot): Promise<Row>;
+  /** The robot for a ContractToUse name, created (with the next free id) if new. */
+  robotForContract(contractName: string, snap: Snapshot): Promise<number>;
 }

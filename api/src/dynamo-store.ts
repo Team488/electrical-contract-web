@@ -9,7 +9,7 @@ import {
   type DynamoDBDocumentClient,
 } from "@aws-sdk/lib-dynamodb";
 import { planImport, SNAPSHOT_USER } from "./snapshot.ts";
-import { auditPk, META, robotPk, snapPk } from "./table.ts";
+import { auditPk, createRobot, META, robotPk, snapPk } from "./table.ts";
 import type { Entity, Key, RobotState, Store } from "./store.ts";
 import { HttpError, type Row, type Snapshot } from "./types.ts";
 
@@ -112,8 +112,33 @@ export class DynamoStore implements Store {
     const out = await this.doc.send(new ScanCommand({
       TableName: this.table, FilterExpression: "sk = :m", ExpressionAttributeValues: { ":m": META },
     }));
-    return (out.Items ?? []).map((m) => ({ id: m.id, name: m.name, season: m.season, rev: m.rev }))
-      .sort((a, b) => (a.id as number) - (b.id as number));
+    return (out.Items ?? []).map((m) => ({
+      id: m.id, name: m.name, season: m.season, rev: m.rev,
+      contract_name: m.contract_name, contract_class: m.contract_class, controller: m.controller ?? "roborio",
+    })).sort((a, b) => (a.id as number) - (b.id as number));
+  }
+
+  async robotForContract(contractName: string, snap: Snapshot): Promise<number> {
+    const robots = await this.listRobots();
+    const found = robots.find((r) => r.contract_name === contractName);
+    if (found) return found.id as number;
+    // Next free id. Two simultaneous first imports of different contracts could pick the
+    // same id; createRobot's condition makes the loser retry with the following one.
+    let id = Math.max(0, ...robots.map((r) => r.id as number)) + 1;
+    for (;; id++) {
+      try {
+        await createRobot(this.doc, this.table, id, {
+          name: snap.robotName ?? contractName,
+          season: Number(/\d{4}/.exec(snap.robotName ?? contractName)?.[0]) || null,
+          contract_name: contractName,
+          contract_class: snap.source.split(".").pop() ?? snap.source,
+          controller: "roborio",
+        });
+        return id;
+      } catch (e) {
+        if (!isConditionFailure(e)) throw e;
+      }
+    }
   }
 
   async state(robotId: number): Promise<RobotState> {
@@ -130,7 +155,10 @@ export class DynamoStore implements Store {
     const s = snaps.Items?.[0];
     const byStr = (k: string) => (a: Row, b: Row) => String(a[k]).localeCompare(String(b[k]));
     return {
-      robot: { id: meta.id, name: meta.name, season: meta.season, contract_class: meta.contract_class, rev: meta.rev, seeded: meta.seeded },
+      robot: {
+        id: meta.id, name: meta.name, season: meta.season, contract_name: meta.contract_name, contract_class: meta.contract_class,
+        controller: meta.controller ?? "roborio", rev: meta.rev, seeded: meta.seeded,
+      },
       snapshot: s ? { git_sha: s.git_sha, source: s.source, generated_at: s.generated_at, imported_at: s.imported_at, json: JSON.parse(s.json as string) } : null,
       devices: of(SK_PREFIX.device).sort(byStr("name")),
       ports: of(SK_PREFIX.power_port).sort(byStr("port")),

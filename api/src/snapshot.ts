@@ -73,13 +73,16 @@ export function planImport(robotId: number, devices: Row[], seeded: boolean, sna
 
   // Code devices, keyed by (bus, CAN ID) or channel. Duplicate keys in the snapshot are a
   // code bug; keep the first and let the UI's duplicate-ID check report it.
-  const codeDevices = new Map<string, { name: string; kind: string; supply: string | null }>();
+  // defined_in is the Java class whose getter defines the device (GeneralContract = shared).
+  const codeDevices = new Map<string, { name: string; kind: string; supply: string | null; defined_in: string | null }>();
   for (const d of snap.canDevices) {
     const k = canKey(d.bus, d.canId);
-    if (!codeDevices.has(k)) codeDevices.set(k, { name: d.name, kind: d.kind, supply: codeSupply(d.pdhPort ?? d.powerFrom) });
+    if (!codeDevices.has(k)) {
+      codeDevices.set(k, { name: d.name, kind: d.kind, supply: codeSupply(d.pdhPort ?? d.powerFrom), defined_in: d.definedIn ?? null });
+    }
   }
-  for (const d of snap.dio) codeDevices.set(`dio:${d.channel}`, { name: d.name, kind: "dio", supply: codeSupply(d.powerFrom) });
-  for (const d of snap.pwm) codeDevices.set(`pwm:${d.channel}`, { name: d.name, kind: "pwm", supply: codeSupply(d.powerFrom) });
+  for (const d of snap.dio) codeDevices.set(`dio:${d.channel}`, { name: d.name, kind: "dio", supply: codeSupply(d.powerFrom), defined_in: d.definedIn ?? null });
+  for (const d of snap.pwm) codeDevices.set(`pwm:${d.channel}`, { name: d.name, kind: "pwm", supply: codeSupply(d.powerFrom), defined_in: d.definedIn ?? null });
 
   const byCode = new Map(rows.filter((d) => d.code_key).map((d) => [d.code_key as string, d]));
   let added = 0, changedCount = 0, removed = 0;
@@ -87,10 +90,10 @@ export function planImport(robotId: number, devices: Row[], seeded: boolean, sna
     const cur = byCode.get(key);
     if (!cur) {
       added++;
-      create({ name: d.name, kind: d.kind, code_key: key, in_code: 1, supply: d.supply });
-    } else if (cur.name !== d.name || cur.kind !== d.kind || cur.in_code !== 1) {
+      create({ name: d.name, kind: d.kind, code_key: key, in_code: 1, supply: d.supply, defined_in: d.defined_in });
+    } else if (cur.name !== d.name || cur.kind !== d.kind || cur.in_code !== 1 || (cur.defined_in ?? null) !== d.defined_in) {
       changedCount++;
-      Object.assign(cur, { name: d.name, kind: d.kind, in_code: 1 });
+      Object.assign(cur, { name: d.name, kind: d.kind, in_code: 1, defined_in: d.defined_in });
       touch(cur);
     }
   }
