@@ -8,6 +8,8 @@
     "monthlyBudgetUsd": 5,
     "reservedConcurrency": "",
     "githubRepo": "Team488/electrical-contract-web",
-    "createGithubOidcProvider": true
+    "createGithubOidcProvider": true,
+    "snapshotSource": "https://raw.githubusercontent.com/Team488/TeamXbot2026/electrical-snapshots/ElectricalWeb",
+    "snapshotPullMinutes": 2
   }
 }

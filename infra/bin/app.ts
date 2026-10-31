@@ -19,4 +19,6 @@ new ElectricalContractStack(app, "ElectricalContractStack", {
   reservedConcurrency: ctx("reservedConcurrency") ? Number(ctx("reservedConcurrency")) : undefined,
   githubRepo: ctx("githubRepo"),
   createGithubOidcProvider: ctx("createGithubOidcProvider") !== "false",
+  snapshotSource: ctx("snapshotSource"),
+  snapshotPullMinutes: Number(ctx("snapshotPullMinutes") ?? 2),
 });

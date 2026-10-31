@@ -54,6 +54,12 @@ DynamoDB Local is AWS's official local copy of DynamoDB, downloaded once into
 
 ## How the data fits together
 
+- **Java changes arrive by themselves.** TeamXbot2026's GitHub Action *Electrical
+  snapshots* publishes every robot's contract as JSON to its `electrical-snapshots`
+  branch on each merge. On page load, the API checks that folder (`snapshotSource` in
+  `infra/cdk.json`, at most every 2 minutes) and imports any new commit
+  (`api/src/pull.ts`). `scripts/sync-contracts.ps1` is the manual fallback.
+
 - **One DynamoDB table** (`pk`/`sk`). Each robot's devices, ports, CAN chains and
   proposals share one partition (`ROBOT#1`), so one query loads the whole page.
   Snapshots and history have their own partitions. Layout: plan §4.

@@ -27,6 +27,10 @@ export interface ElectricalContractStackProps extends StackProps {
   githubRepo?: string;
   /** Create the account's GitHub OIDC provider (false if another stack already made it). */
   createGithubOidcProvider: boolean;
+  /** Folder URL of published contract snapshots (index.json + one file per robot); unset = no pulling. */
+  snapshotSource?: string;
+  /** Minutes between checks of snapshotSource, per API instance. */
+  snapshotPullMinutes: number;
 }
 
 export class ElectricalContractStack extends Stack {
@@ -56,12 +60,15 @@ export class ElectricalContractStack extends Stack {
       runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
       memorySize: 256,
-      timeout: Duration.seconds(10),
+      // A snapshot pull imports every robot inside one request, so allow more than a plain read needs.
+      timeout: Duration.seconds(30),
       logGroup,
       reservedConcurrentExecutions: props.reservedConcurrency,
       environment: {
         TABLE_NAME: table.tableName,
         SSM_PREFIX: props.ssmPrefix,
+        ...(props.snapshotSource ? { SNAPSHOT_SOURCE: props.snapshotSource } : {}),
+        SNAPSHOT_PULL_MINUTES: String(props.snapshotPullMinutes),
         NODE_OPTIONS: "--enable-source-maps",
       },
       bundling: {

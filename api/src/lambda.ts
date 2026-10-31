@@ -5,6 +5,7 @@ import type { APIGatewayProxyStructuredResultV2, LambdaFunctionURLEvent } from "
 import { loadConfig, makeDocClient } from "./config.ts";
 import { DynamoStore } from "./dynamo-store.ts";
 import { createHandler } from "./handlers.ts";
+import { makePuller } from "./pull.ts";
 import { ensureRobot } from "./table.ts";
 
 let ready: Promise<(req: Request) => Promise<Response>> | undefined;
@@ -13,7 +14,9 @@ async function init() {
   const config = { ...(await loadConfig()), corsOrigins: null };
   const doc = makeDocClient();
   await ensureRobot(doc, config.tableName);
-  return createHandler({ store: new DynamoStore(doc, config.tableName), config });
+  const store = new DynamoStore(doc, config.tableName);
+  const pullMinutes = Number(process.env.SNAPSHOT_PULL_MINUTES ?? 2);
+  return createHandler({ store, config, pull: makePuller(store, process.env.SNAPSHOT_SOURCE, pullMinutes * 60_000) });
 }
 
 export async function handler(event: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {

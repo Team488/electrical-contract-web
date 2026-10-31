@@ -118,6 +118,26 @@ export class DynamoStore implements Store {
     })).sort((a, b) => (a.id as number) - (b.id as number));
   }
 
+  async syncedSha(): Promise<string | null> {
+    const out = await this.doc.send(new GetCommand({ TableName: this.table, Key: { pk: "SYNC", sk: "SNAPSHOTS" } }));
+    return (out.Item?.sha as string | undefined) ?? null;
+  }
+
+  async claimSync(from: string | null, to: string | null): Promise<boolean> {
+    try {
+      await this.doc.send(new PutCommand({
+        TableName: this.table,
+        Item: { pk: "SYNC", sk: "SNAPSHOTS", sha: to, at: now() },
+        ConditionExpression: from === null ? "attribute_not_exists(sha) OR sha = :null" : "sha = :from",
+        ExpressionAttributeValues: from === null ? { ":null": null } : { ":from": from },
+      }));
+      return true;
+    } catch (e) {
+      if (isConditionFailure(e)) return false;
+      throw e;
+    }
+  }
+
   async robotForContract(contractName: string, snap: Snapshot): Promise<number> {
     const robots = await this.listRobots();
     const found = robots.find((r) => r.contract_name === contractName);

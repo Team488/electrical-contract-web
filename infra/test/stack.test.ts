@@ -9,6 +9,7 @@ const base: ElectricalContractStackProps = {
   ssmPrefix: "/electrical-contract/",
   monthlyBudgetUsd: 5,
   createGithubOidcProvider: true,
+  snapshotPullMinutes: 2,
 };
 
 function synth(extra: Partial<ElectricalContractStackProps> = {}) {
@@ -38,7 +39,17 @@ it("runs the API on Node 22 arm64 behind a public Function URL with CORS for Pag
     Cors: Match.objectLike({ AllowOrigins: ["https://team488.github.io"] }),
   });
   t.resourceCountIs("AWS::Lambda::Permission", 2);
+  t.hasResourceProperties("AWS::Lambda::Function", { Timeout: 30 });
   t.hasResourceProperties("AWS::Logs::LogGroup", { RetentionInDays: 30 });
+});
+
+it("passes the snapshot source to the API only when set", () => {
+  const vars = (t: Template) =>
+    Object.values(t.findResources("AWS::Lambda::Function"))[0].Properties.Environment.Variables;
+  expect(vars(synth())).not.toHaveProperty("SNAPSHOT_SOURCE");
+  expect(vars(synth({ snapshotSource: "https://example/snaps" }))).toMatchObject({
+    SNAPSHOT_SOURCE: "https://example/snaps", SNAPSHOT_PULL_MINUTES: "2",
+  });
 });
 
 it("lets the API read only its own SSM parameters", () => {

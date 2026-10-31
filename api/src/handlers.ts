@@ -61,6 +61,8 @@ function numOrNull(v: unknown, field: string, min: number, max: number, integer:
 export interface Deps {
   store: Store;
   config: Config;
+  /** Pulls newly published contract snapshots (pull.ts); run before page-load reads. */
+  pull?: () => Promise<void>;
 }
 
 /** A supply may name a port or another device; reject unknown devices and loops. */
@@ -227,6 +229,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
     try {
+      if (req.method === "GET" && deps.pull && /^\/api\/robots(\/\d+(\/rev)?)?$/.test(path)) await deps.pull();
       for (const [method, re, handler] of routes) {
         const m = path.match(re);
         if (m && method === req.method) return json(await handler(req, deps, m), 200, cors);

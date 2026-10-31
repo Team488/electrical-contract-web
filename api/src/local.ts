@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import { loadConfig, makeDocClient } from "./config.ts";
 import { DynamoStore } from "./dynamo-store.ts";
 import { createHandler } from "./handlers.ts";
+import { makePuller } from "./pull.ts";
 import { createTableIfMissing, ensureRobot } from "./table.ts";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -23,7 +24,9 @@ for (let attempt = 1; ; attempt++) {
   }
 }
 await ensureRobot(doc, config.tableName);
-const handle = createHandler({ store: new DynamoStore(doc, config.tableName), config });
+const store = new DynamoStore(doc, config.tableName);
+// Optional: set SNAPSHOT_SOURCE in .env to pull published snapshots like the hosted API does.
+const handle = createHandler({ store, config, pull: makePuller(store, process.env.SNAPSHOT_SOURCE, 2 * 60_000) });
 
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8787);
