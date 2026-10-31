@@ -4,3 +4,4 @@ tools/
 api/.env
 infra/cdk.out/
 *.log
+infra/cdk-outputs.json

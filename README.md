@@ -13,8 +13,10 @@ for the fields the robot code uses (CAN IDs, channels, motor types). The web sho
 those fields read-only, and students propose changes to them.
 
 Design and phases: `TeamXbot2026/plan_electrical_web.md`.
-Status: **phase 1b done**, a local demo on the AWS stack (Lambda code + DynamoDB
-Local), with the CDK app written and synthesized. Nothing is deployed yet (phase 2).
+Status: **phase 2 done (2026-10-31).** Live at https://team488.github.io/electrical-contract-web/
+with the API on AWS (account 851725533387, us-west-2, stack `ElectricalContractStack`).
+The local demo still works and uses a local API whenever the page is opened from
+localhost or the LAN.
 
 ## Layout
 
@@ -79,7 +81,7 @@ cd api;   npm test; npm run typecheck   # 15 API tests against an in-memory Dyna
 cd infra; npm test; npm run typecheck   # 4 CDK template tests
 ```
 
-## Deploying to AWS (phase 2, not done yet)
+## Deploying to AWS (how phase 2 was done; repeat to update)
 
 All settings are in `infra/cdk.json` (`context`); override with `-c key=value`.
 
@@ -100,7 +102,17 @@ All settings are in `infra/cdk.json` (`context`); override with `-c key=value`.
    Add `-c reservedConcurrency=5` if the account's Lambda concurrency quota allows it.
    Add `-c createGithubOidcProvider=false` if the account already has a GitHub OIDC
    provider.
-4. Put the `ApiUrl` output (without the trailing slash) in `web/config.js`, push to
-   `Team488/electrical-contract-web`, and turn on GitHub Pages from `web/`.
+4. Put the `ApiUrl` output (without the trailing slash) in `HOSTED_API` in
+   `web/config.js` and push to `main`. The Pages workflow
+   (`.github/workflows/pages.yml`) publishes `web/`.
 5. Import the snapshot:
    `$env:SNAPSHOT_KEY='<key>'; node scripts/import-snapshot.mjs <snapshot.json> <ApiUrl>`.
+
+The CLI credentials from `aws login` aren't read by CDK directly; before `cdk deploy`,
+load them into the shell with
+`aws configure export-credentials --format powershell | Invoke-Expression`.
+
+The team passcode is in SSM. Read it with
+`aws ssm get-parameter --with-decryption --name /electrical-contract/PASSCODE --query Parameter.Value --output text`.
+To change it, `put-parameter --overwrite` a new value. The API reads secrets at cold
+start, so redeploy (or wait for idle instances to recycle) for a change to take effect.
