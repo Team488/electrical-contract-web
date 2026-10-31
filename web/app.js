@@ -111,13 +111,15 @@ function App() {
   return html`
     <header>
       <div class="title">
-        <h1>
-          ${robots.length > 1
-            ? html`<select class="robot" aria-label="Robot" value=${state.robot.id} onChange=${(e) => pickRobot(Number(e.target.value))}>
+        <div class="robot-row">
+          <h1>${state.robot.name} wiring</h1>
+          ${robots.length > 1 && html`
+            <label class="robot-picker">Robot
+              <select value=${state.robot.id} onChange=${(e) => pickRobot(Number(e.target.value))}>
                 ${robots.map((r) => html`<option value=${r.id}>${r.name}</option>`)}
-              </select>`
-            : state.robot.name} wiring
-        </h1>
+              </select>
+            </label>`}
+        </div>
         <span class="meta">
           ${state.robot.contract_class ?? ""}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""} ·
           Java ${state.snapshot?.git_sha?.slice(0, 7) ?? "—"} · imported ${fmtTime(state.snapshot?.imported_at)} · rev ${state.robot.rev}

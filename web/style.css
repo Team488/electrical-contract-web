@@ -65,7 +65,9 @@ h3 { font-size: 0.95em; margin: 16px 0 6px; }
 nav { display: flex; gap: 2px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tab { border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 10px 12px; white-space: nowrap; }
 .tab.active { border-bottom-color: var(--accent); font-weight: 600; }
-select.robot { font: inherit; font-weight: 700; border: none; background: none; padding: 0 2px; max-width: 70vw; }
+.robot-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.robot-picker { display: flex; align-items: center; gap: 6px; font-size: 0.9em; color: var(--muted); }
+.robot-picker select { border: 2px solid var(--accent); font-weight: 600; color: var(--text); padding: 4px 8px; }
 .tag { background: var(--info-bg); color: var(--info); border-radius: 8px; padding: 0 6px; font-size: 0.75em; font-weight: 600; }
 .warn-box { background: var(--warn-bg); border-radius: 6px; padding: 8px 10px; font-size: 0.9em; }
 .badge { background: var(--error); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 0.8em; }
