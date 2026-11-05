@@ -27,7 +27,7 @@ motor types. The page shows those read-only, and students propose changes to the
 | Snapshot workflow | `TeamXbot2026/.github/workflows/electrical-snapshots.yml`; for 2027 on, FRCRobotTemplate PR #96 |
 | TeamXbot2025 one-off export | `scripts/legacy/teamxbot2025/` |
 
-**AWS account owner:** _(fill in: the mentor who owns account 851725533387)_. The
+**AWS account owner: Alex is primary owner of account 851725533387, TBlank also has access. The
 account is shared with the scouting app (`ScoutingBackendStack*`). Ask its owners
 before running `cdk bootstrap` or adding an account-wide budget.
 
