@@ -50,10 +50,14 @@ before running `cdk bootstrap` or adding an account-wide budget.
    to `.../main`, run `cdk deploy`, and delete the `ElectricalWeb` branch. Until then the
    site follows the `ElectricalWeb` branch.
 2. **Before the 2027 repo is created** (plan §13.5, §13.6):
+   - Review and merge FRCRobotTemplate PR #97. It moves the template to
+     SeriouslyCommonLib `20261031.5` and fixes `Contract2023` for #688, which removed
+     `CANBusId.RIO` and a `DeviceInfo` constructor. It's independent of the
+     electrical work and builds cleanly now.
    - Review, merge and release SeriouslyCommonLib PR #692.
-   - Fix FRCRobotTemplate `main` for SeriouslyCommonLib #688, which removed
-     `CANBusId.RIO` and a `DeviceInfo` constructor. That's why PR #96's checks fail.
-   - Bump the template's SeriouslyCommonLib version, then merge FRCRobotTemplate PR #96.
+   - Rebase FRCRobotTemplate PR #96 on `main`, set `SeriouslyCommonLibVersion` to the
+     #692 release, take it out of draft and merge. Its checks fail until #692 is on
+     the library's `main`, because CI builds it against that.
    - Create the 2027 repo from the template, and add its snapshot folder to
      `snapshotSources`.
 3. **Small data fixes** (plan §11):
