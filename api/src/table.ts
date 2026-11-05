@@ -28,7 +28,13 @@ export async function createTableIfMissing(doc: DynamoDBDocumentClient, tableNam
   }));
 }
 
+/** Season repo that robots created before repo support came from. */
+export const DEFAULT_REPO = "Team488/TeamXbot2026";
+export const REPO_RE = /^[A-Za-z0-9_.-]{1,40}\/[A-Za-z0-9_.-]{1,60}$/;
+
 export interface RobotInfo {
+  /** GitHub "owner/name" of the season repo whose contract this robot is. */
+  repo: string;
   name: string;
   season: number | null;
   contract_name: string;
@@ -69,7 +75,7 @@ export async function createRobot(doc: DynamoDBDocumentClient, tableName: string
 }
 
 export const COMPETITION_2026: RobotInfo = {
-  name: "2026 Competition", season: 2026, contract_name: "Competition", contract_class: "Contract2026", controller: "roborio",
+  repo: DEFAULT_REPO, name: "2026 Competition", season: 2026, contract_name: "Competition", contract_class: "Contract2026", controller: "roborio",
 };
 
 /**

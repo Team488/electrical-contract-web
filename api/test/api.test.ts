@@ -279,6 +279,24 @@ describe("several robots", () => {
     expect(byClass).toContain("RoboxContract");
   });
 
+  it("treats the same contract name in two repos as two robots", async () => {
+    const postRepo = (repo: string, contract: string, snap: unknown) => api(`/api/repos/${repo}/contracts/${contract}/snapshot`, {
+      method: "POST", body: JSON.stringify(snap), headers: { "x-snapshot-key": "test-key" },
+    });
+    // The old route goes to the 2026 repo, like robot 1.
+    expect(((await (await post("Competition", snapshot)).json()) as any).robotId).toBe(1);
+    expect(((await (await postRepo("Team488/TeamXbot2026", "Competition", snapshot)).json()) as any).robotId).toBe(1);
+    const r2027 = (await (await postRepo("Team488/TeamXbot2027", "Competition", snapshot)).json()) as any;
+    expect(r2027).toMatchObject({ robotId: 2, repo: "Team488/TeamXbot2027" });
+
+    const robots = (await (await api("/api/robots")).json()) as any[];
+    expect(robots.map((r) => [r.id, r.repo, r.contract_name])).toEqual([
+      [1, "Team488/TeamXbot2026", "Competition"], [2, "Team488/TeamXbot2027", "Competition"],
+    ]);
+    expect(((await (await api("/api/robots/2")).json()) as any).robot.repo).toBe("Team488/TeamXbot2027");
+    expect((await postRepo("not-a-repo", "Competition", snapshot)).status).toBe(404);
+  });
+
   it("rejects a bad contract name or key", async () => {
     expect((await post("bad name!", snapshot)).status).toBe(404);
     const r = await api("/api/contracts/2023/snapshot", { method: "POST", body: JSON.stringify(snapshot2023), headers: { "x-snapshot-key": "nope" } });

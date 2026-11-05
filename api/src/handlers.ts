@@ -7,6 +7,7 @@ import { checkPasscode, checkSnapshotKey, issueToken, verifyToken } from "./auth
 import type { Config } from "./config.ts";
 import type { Store } from "./store.ts";
 import { checkShape } from "./snapshot.ts";
+import { DEFAULT_REPO } from "./table.ts";
 import { HttpError, type Row, type Snapshot } from "./types.ts";
 
 const KINDS = ["motor", "can_sensor", "dio", "pwm", "vrm", "converter", "load"];
@@ -82,6 +83,14 @@ async function checkSupply(store: Store, robotId: number, deviceId: number | nul
 
 type Handler = (req: Request, deps: Deps, m: RegExpMatchArray) => Promise<unknown>;
 
+async function importContract(req: Request, { store, config }: Deps, repo: string, contract: string) {
+  if (!checkSnapshotKey(config, req.headers.get("x-snapshot-key"))) throw new HttpError(403, "Bad snapshot key");
+  const snap = (await req.json()) as Snapshot;
+  checkShape(snap);
+  const robotId = await store.robotForContract(repo, contract, snap);
+  return { robotId, repo, ...(await store.importSnapshot(robotId, snap)) };
+}
+
 function requireUser({ config }: Deps, req: Request): string {
   const user = verifyToken(config, req.headers.get("authorization"));
   if (!user) throw new HttpError(401, "Log in with the team passcode to edit");
@@ -109,14 +118,12 @@ const routes: [string, RegExp, Handler][] = [
     return store.importSnapshot(+m[1], (await req.json()) as Snapshot);
   }],
 
-  // CI/import entry point: picks (or creates) the robot by its ContractToUse name.
-  ["POST", /^\/api\/contracts\/([A-Za-z0-9_-]{1,30})\/snapshot$/, async (req, { store, config }, m) => {
-    if (!checkSnapshotKey(config, req.headers.get("x-snapshot-key"))) throw new HttpError(403, "Bad snapshot key");
-    const snap = (await req.json()) as Snapshot;
-    checkShape(snap);
-    const robotId = await store.robotForContract(m[1], snap);
-    return { robotId, ...(await store.importSnapshot(robotId, snap)) };
-  }],
+  // Import entry point: picks (or creates) the robot by season repo and ContractToUse name.
+  ["POST", /^\/api\/repos\/([A-Za-z0-9_.-]{1,40})\/([A-Za-z0-9_.-]{1,60})\/contracts\/([A-Za-z0-9_-]{1,30})\/snapshot$/,
+    async (req, deps, m) => importContract(req, deps, `${m[1]}/${m[2]}`, m[3])],
+
+  // Older form, before robots had a repo: the 2026 repo.
+  ["POST", /^\/api\/contracts\/([A-Za-z0-9_-]{1,30})\/snapshot$/, async (req, deps, m) => importContract(req, deps, DEFAULT_REPO, m[1])],
 
   ["POST", /^\/api\/robots\/(\d+)\/devices$/, async (req, deps, m) => {
     const user = requireUser(deps, req);

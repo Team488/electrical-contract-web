@@ -22,6 +22,7 @@ export function reportText(model) {
   };
 
   p(RULE); p("Electrical Contract Report"); p(RULE); p();
+  p(`Repository: ${state.robot.repo ?? ""}`);
   p(`Robot: ${state.robot.name}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""}`);
   p(`Java source: ${snap?.source ?? "(no snapshot)"} @ ${state.snapshot?.git_sha?.slice(0, 7) ?? "?"}`);
   p(`Wiring data revision: ${state.robot.rev}`);

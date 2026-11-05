@@ -54,16 +54,22 @@ DynamoDB Local is AWS's official local copy of DynamoDB, downloaded once into
 
 ## How the data fits together
 
-- **Java changes arrive by themselves.** TeamXbot2026's GitHub Action *Electrical
+- **Java changes arrive by themselves.** Each season repo's GitHub Action *Electrical
   snapshots* publishes every robot's contract as JSON to its `electrical-snapshots`
-  branch on each merge. On page load, the API checks that folder (`snapshotSource` in
-  `infra/cdk.json`, at most every 2 minutes) and imports any new commit
-  (`api/src/pull.ts`). `scripts/sync-contracts.ps1` is the manual fallback.
+  branch on each merge. On page load, the API checks each repo's folder
+  (`snapshotSources` in `infra/cdk.json`, comma-separated, at most every 2 minutes) and
+  imports any new commit (`api/src/pull.ts`). `scripts/sync-contracts.ps1 -Repo owner/name`
+  is the manual fallback.
+- **One web robot per repo + contract.** The page picks a **Repository**, then a
+  **Robot** (its `ContractToUse` name). The same contract name in two repos, e.g.
+  `Competition` in TeamXbot2026 and in the 2027 repo, is two robots with separate wiring.
+  Robots created before repos were tracked belong to `Team488/TeamXbot2026`.
 
 - **One DynamoDB table** (`pk`/`sk`). Each robot's devices, ports, CAN chains and
   proposals share one partition (`ROBOT#1`), so one query loads the whole page.
   Snapshots and history have their own partitions. Layout: plan §4.
-- **Snapshot import** (`POST /api/robots/1/snapshot`, guarded by `SNAPSHOT_KEY`):
+- **Snapshot import** (`POST /api/repos/<owner>/<repo>/contracts/<name>/snapshot`,
+  guarded by `SNAPSHOT_KEY`; `/api/contracts/<name>/snapshot` means TeamXbot2026):
   - Stores the Java snapshot.
   - Keeps the device list in sync with code, keyed by `(bus, CAN ID)` or by DIO/PWM
     channel.
@@ -83,8 +89,8 @@ DynamoDB Local is AWS's official local copy of DynamoDB, downloaded once into
 ## Tests
 
 ```powershell
-cd api;   npm test; npm run typecheck   # 15 API tests against an in-memory DynamoDB Local
-cd infra; npm test; npm run typecheck   # 4 CDK template tests
+cd api;   npm test; npm run typecheck   # 26 API tests against an in-memory DynamoDB Local
+cd infra; npm test; npm run typecheck   # 5 CDK template tests
 ```
 
 ## Deploying to AWS (how phase 2 was done; repeat to update)

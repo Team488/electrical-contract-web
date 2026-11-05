@@ -69,6 +69,7 @@ nav { display: flex; gap: 2px; padding: 0 12px; background: var(--panel); border
 .robot-picker { display: flex; align-items: center; gap: 6px; font-size: 0.9em; color: var(--muted); }
 .robot-picker select { border: 2px solid var(--accent); font-weight: 600; color: var(--text); padding: 4px 8px; }
 .tag { background: var(--info-bg); color: var(--info); border-radius: 8px; padding: 0 6px; font-size: 0.75em; font-weight: 600; }
+.tag.warn { background: var(--warn-bg); color: var(--text); }
 .warn-box { background: var(--warn-bg); border-radius: 6px; padding: 8px 10px; font-size: 0.9em; }
 .badge { background: var(--error); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 0.8em; }
 

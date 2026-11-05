@@ -51,6 +51,13 @@ function App() {
     reload();
   };
 
+  // Switching repo keeps the same contract (e.g. "2023") when the new repo has it.
+  const pickRepo = (repo) => {
+    const inRepo = robots.filter((r) => r.repo === repo);
+    const same = inRepo.find((r) => r.contract_name === state?.robot.contract_name);
+    if (inRepo.length) pickRobot((same ?? inRepo[0]).id);
+  };
+
   // Poll the cheap revision counter; refetch everything only when it moves.
   useEffect(() => {
     const t = setInterval(async () => {
@@ -107,21 +114,31 @@ function App() {
 
   const ctx = { model, save, canEdit: !!login, openProposal: (device) => setDialog({ kind: "proposal", device }), showToast, reload };
   const errors = checks.filter((c) => c.level === "error").length;
+  const repos = repoList(robots);
+  const repoRobots = robots.filter((r) => r.repo === state.robot.repo);
+  const olderRepo = repos.length > 1 && state.robot.repo !== repos[0];
 
   return html`
     <header>
       <div class="title">
         <div class="robot-row">
           <h1>${state.robot.name} wiring</h1>
-          ${robots.length > 1 && html`
-            <label class="robot-picker">Robot
-              <select value=${state.robot.id} onChange=${(e) => pickRobot(Number(e.target.value))}>
-                ${robots.map((r) => html`<option value=${r.id}>${r.name}</option>`)}
+          ${repos.length > 1 && html`
+            <label class="robot-picker">Repository
+              <select value=${state.robot.repo} onChange=${(e) => pickRepo(e.target.value)}>
+                ${repos.map((r) => html`<option value=${r}>${shortRepo(r)}</option>`)}
               </select>
             </label>`}
+          ${repoRobots.length > 1 && html`
+            <label class="robot-picker">Robot
+              <select value=${state.robot.id} onChange=${(e) => pickRobot(Number(e.target.value))}>
+                ${repoRobots.map((r) => html`<option value=${r.id}>${r.name}</option>`)}
+              </select>
+            </label>`}
+          ${olderRepo && html`<span class="tag warn" title="Each repository keeps its own copy of the wiring. Edit the copy for the code that's on the robot.">older repository</span>`}
         </div>
         <span class="meta">
-          ${state.robot.contract_class ?? ""}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""} ·
+          ${shortRepo(state.robot.repo)} · ${state.robot.contract_class ?? ""}${state.robot.contract_name ? ` (ContractToUse = ${state.robot.contract_name})` : ""} ·
           Java ${state.snapshot?.git_sha?.slice(0, 7) ?? "—"} · imported ${fmtTime(state.snapshot?.imported_at)} · rev ${state.robot.rev}
         </span>
       </div>
@@ -556,3 +573,14 @@ function HistoryTab({ save, canEdit, rev, showToast }) {
 }
 
 render(html`<${App} />`, document.getElementById("app"));
+
+/** Repos that have robots, newest season first (by the year in the name). */
+function repoList(robots) {
+  const year = (r) => Number(/\d{4}/.exec(r)?.[0] ?? 0);
+  return [...new Set(robots.map((r) => r.repo))].sort((a, b) => year(b) - year(a) || a.localeCompare(b));
+}
+
+/** "Team488/TeamXbot2026" -> "TeamXbot2026". */
+function shortRepo(repo) {
+  return repo ? repo.split("/").pop() : "";
+}

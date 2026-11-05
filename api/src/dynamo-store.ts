@@ -9,7 +9,7 @@ import {
   type DynamoDBDocumentClient,
 } from "@aws-sdk/lib-dynamodb";
 import { planImport, SNAPSHOT_USER } from "./snapshot.ts";
-import { auditPk, createRobot, META, robotPk, snapPk } from "./table.ts";
+import { auditPk, createRobot, DEFAULT_REPO, META, robotPk, snapPk } from "./table.ts";
 import type { Entity, Key, RobotState, Store } from "./store.ts";
 import { HttpError, type Row, type Snapshot } from "./types.ts";
 
@@ -113,21 +113,21 @@ export class DynamoStore implements Store {
       TableName: this.table, FilterExpression: "sk = :m", ExpressionAttributeValues: { ":m": META },
     }));
     return (out.Items ?? []).map((m) => ({
-      id: m.id, name: m.name, season: m.season, rev: m.rev,
+      id: m.id, repo: m.repo ?? DEFAULT_REPO, name: m.name, season: m.season, rev: m.rev,
       contract_name: m.contract_name, contract_class: m.contract_class, controller: m.controller ?? "roborio",
     })).sort((a, b) => (a.id as number) - (b.id as number));
   }
 
-  async syncedSha(): Promise<string | null> {
-    const out = await this.doc.send(new GetCommand({ TableName: this.table, Key: { pk: "SYNC", sk: "SNAPSHOTS" } }));
+  async syncedSha(repo: string): Promise<string | null> {
+    const out = await this.doc.send(new GetCommand({ TableName: this.table, Key: { pk: "SYNC", sk: `SNAPSHOTS#${repo}` } }));
     return (out.Item?.sha as string | undefined) ?? null;
   }
 
-  async claimSync(from: string | null, to: string | null): Promise<boolean> {
+  async claimSync(repo: string, from: string | null, to: string | null): Promise<boolean> {
     try {
       await this.doc.send(new PutCommand({
         TableName: this.table,
-        Item: { pk: "SYNC", sk: "SNAPSHOTS", sha: to, at: now() },
+        Item: { pk: "SYNC", sk: `SNAPSHOTS#${repo}`, repo, sha: to, at: now() },
         ConditionExpression: from === null ? "attribute_not_exists(sha) OR sha = :null" : "sha = :from",
         ExpressionAttributeValues: from === null ? { ":null": null } : { ":from": from },
       }));
@@ -138,9 +138,9 @@ export class DynamoStore implements Store {
     }
   }
 
-  async robotForContract(contractName: string, snap: Snapshot): Promise<number> {
+  async robotForContract(repo: string, contractName: string, snap: Snapshot): Promise<number> {
     const robots = await this.listRobots();
-    const found = robots.find((r) => r.contract_name === contractName);
+    const found = robots.find((r) => r.repo === repo && r.contract_name === contractName);
     if (found) return found.id as number;
     // Next free id. Two simultaneous first imports of different contracts could pick the
     // same id; createRobot's condition makes the loser retry with the following one.
@@ -148,6 +148,7 @@ export class DynamoStore implements Store {
     for (;; id++) {
       try {
         await createRobot(this.doc, this.table, id, {
+          repo,
           name: snap.robotName ?? contractName,
           season: Number(/\d{4}/.exec(snap.robotName ?? contractName)?.[0]) || null,
           contract_name: contractName,
@@ -176,7 +177,7 @@ export class DynamoStore implements Store {
     const byStr = (k: string) => (a: Row, b: Row) => String(a[k]).localeCompare(String(b[k]));
     return {
       robot: {
-        id: meta.id, name: meta.name, season: meta.season, contract_name: meta.contract_name, contract_class: meta.contract_class,
+        id: meta.id, repo: meta.repo ?? DEFAULT_REPO, name: meta.name, season: meta.season, contract_name: meta.contract_name, contract_class: meta.contract_class,
         controller: meta.controller ?? "roborio", rev: meta.rev, seeded: meta.seeded,
       },
       snapshot: s ? { git_sha: s.git_sha, source: s.source, generated_at: s.generated_at, imported_at: s.imported_at, json: JSON.parse(s.json as string) } : null,

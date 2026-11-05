@@ -46,9 +46,9 @@ it("runs the API on Node 22 arm64 behind a public Function URL with CORS for Pag
 it("passes the snapshot source to the API only when set", () => {
   const vars = (t: Template) =>
     Object.values(t.findResources("AWS::Lambda::Function"))[0].Properties.Environment.Variables;
-  expect(vars(synth())).not.toHaveProperty("SNAPSHOT_SOURCE");
-  expect(vars(synth({ snapshotSource: "https://example/snaps" }))).toMatchObject({
-    SNAPSHOT_SOURCE: "https://example/snaps", SNAPSHOT_PULL_MINUTES: "2",
+  expect(vars(synth())).not.toHaveProperty("SNAPSHOT_SOURCES");
+  expect(vars(synth({ snapshotSources: "https://example/snaps" }))).toMatchObject({
+    SNAPSHOT_SOURCES: "https://example/snaps", SNAPSHOT_PULL_MINUTES: "2",
   });
 });
 

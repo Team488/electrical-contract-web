@@ -27,9 +27,13 @@ export interface ElectricalContractStackProps extends StackProps {
   githubRepo?: string;
   /** Create the account's GitHub OIDC provider (false if another stack already made it). */
   createGithubOidcProvider: boolean;
-  /** Folder URL of published contract snapshots (index.json + one file per robot); unset = no pulling. */
-  snapshotSource?: string;
-  /** Minutes between checks of snapshotSource, per API instance. */
+  /**
+   * Comma-separated folder URLs of published contract snapshots (index.json + one file per
+   * robot), one per season repo; unset = no pulling. Each raw.githubusercontent.com URL names
+   * its repo; another URL needs "owner/name=url".
+   */
+  snapshotSources?: string;
+  /** Minutes between checks of snapshotSources, per API instance. */
   snapshotPullMinutes: number;
 }
 
@@ -67,7 +71,7 @@ export class ElectricalContractStack extends Stack {
       environment: {
         TABLE_NAME: table.tableName,
         SSM_PREFIX: props.ssmPrefix,
-        ...(props.snapshotSource ? { SNAPSHOT_SOURCE: props.snapshotSource } : {}),
+        ...(props.snapshotSources ? { SNAPSHOT_SOURCES: props.snapshotSources } : {}),
         SNAPSHOT_PULL_MINUTES: String(props.snapshotPullMinutes),
         NODE_OPTIONS: "--enable-source-maps",
       },
