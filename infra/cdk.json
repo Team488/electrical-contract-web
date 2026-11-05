@@ -6,7 +6,7 @@
     "ssmPrefix": "/electrical-contract/",
     "alertEmail": "",
     "monthlyBudgetUsd": 5,
-    "reservedConcurrency": "",
+    "reservedConcurrency": "5",
     "githubRepo": "Team488/electrical-contract-web",
     "createGithubOidcProvider": true,
     "snapshotSources": "https://raw.githubusercontent.com/Team488/TeamXbot2026/electrical-snapshots/ElectricalWeb",

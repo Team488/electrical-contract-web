@@ -12,7 +12,9 @@ The Java contract in the season robot repo (`TeamXbot2026`) stays the source of 
 for the fields the robot code uses (CAN IDs, channels, motor types). The web shows
 those fields read-only, and students propose changes to them.
 
-Design and phases: `TeamXbot2026/plan_electrical_web.md`.
+**Mentors and new programmers: start with [HANDOFF.md](HANDOFF.md).**
+
+Design and how-to: `TeamXbot2026/plan_Ele_contract.md` (original phases: `plan_electrical_web.md`).
 Status: **phase 2 done (2026-10-31).** Live at https://team488.github.io/electrical-contract-web/
 with the API on AWS (account 851725533387, us-west-2, stack `ElectricalContractStack`).
 The local demo still works and uses a local API whenever the page is opened from
@@ -26,7 +28,8 @@ api/      The API (TypeScript): handlers.ts (routes), dynamo-store.ts (DynamoDB)
 infra/    AWS CDK app (TypeScript): DynamoDB table, Lambda + Function URL, budget,
           GitHub OIDC deploy role
 web/      Static front end: plain ES modules + vendored Preact/htm, no build step
-scripts/  dev.ps1 (start the demo), get-dynamodb-local.ps1, import-snapshot.mjs, serve.py
+scripts/  dev.ps1 (start the demo), get-dynamodb-local.ps1, import-snapshot.mjs, serve.py,
+          sync-contracts.ps1; legacy/teamxbot2025 (one-off 2025 export)
 ```
 
 ## Run the local demo (Windows)
@@ -111,7 +114,8 @@ All settings are in `infra/cdk.json` (`context`); override with `-c key=value`.
    npx cdk bootstrap aws://<account-id>/us-west-2
    npx cdk deploy -c alertEmail=<team email>
    ```
-   Add `-c reservedConcurrency=5` if the account's Lambda concurrency quota allows it.
+   `reservedConcurrency` is 5 in `cdk.json` (caps cost and abuse). Pass
+   `-c reservedConcurrency=` to drop it if the account's Lambda quota is too low.
    Add `-c createGithubOidcProvider=false` if the account already has a GitHub OIDC
    provider.
 4. Put the `ApiUrl` output (without the trailing slash) in `HOSTED_API` in

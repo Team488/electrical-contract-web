@@ -1,0 +1,47 @@
+diff --git a/build.gradle b/build.gradle
+index 7cdaf9e..9aba3e9 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -274,4 +274,9 @@ jacocoTestReport {
+ }
+ 
+ // always generate the coverage report after the tests run
+-test.finalizedBy { jacocoTestReport }
+\ No newline at end of file
++test.finalizedBy { jacocoTestReport }
++// One-off electrical export (local only, not committed)
++task export2025(type: JavaExec) {
++    mainClass = "electrical.report.Export2025"
++    classpath = sourceSets.main.runtimeClasspath
++}
+diff --git a/vendordeps/PathplannerLib.json b/vendordeps/PathplannerLib.json
+index 876cdd4..b5cbe3d 100644
+--- a/vendordeps/PathplannerLib.json
++++ b/vendordeps/PathplannerLib.json
+@@ -1,7 +1,7 @@
+ {
+   "fileName": "PathplannerLib.json",
+   "name": "PathplannerLib",
+-  "version": "2025.1.1",
++  "version": "2025.2.7",
+   "uuid": "1b42324f-17c6-4875-8e77-1c312bc8c786",
+   "frcYear": "2025",
+   "mavenUrls": [
+@@ -12,7 +12,7 @@
+     {
+       "groupId": "com.pathplanner.lib",
+       "artifactId": "PathplannerLib-java",
+-      "version": "2025.1.1"
++      "version": "2025.2.7"
+     }
+   ],
+   "jniDependencies": [],
+@@ -20,7 +20,7 @@
+     {
+       "groupId": "com.pathplanner.lib",
+       "artifactId": "PathplannerLib-cpp",
+-      "version": "2025.1.1",
++      "version": "2025.2.7",
+       "libName": "PathplannerLib",
+       "headerClassifier": "headers",
+       "sharedLibrary": false,
