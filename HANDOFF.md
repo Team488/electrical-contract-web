@@ -24,10 +24,10 @@ motor types. The page shows those read-only, and students propose changes to the
 | AWS settings | `infra/cdk.json` |
 | Java exporter (2026) | `TeamXbot2026/src/main/java/electrical/report/` |
 | Java exporter (2027 on) | SeriouslyCommonLib `xbot.common.electrical.report` (#692, release `20261109.020802` and later) |
-| Snapshot workflow | `TeamXbot2026/.github/workflows/electrical-snapshots.yml`; for 2027 on, FRCRobotTemplate (PR #96) |
+| Snapshot workflow | `TeamXbot2026/.github/workflows/electrical-snapshots.yml`; for 2027 on, inherited from FRCRobotTemplate |
 | TeamXbot2025 one-off export | `scripts/legacy/teamxbot2025/` |
 
-**AWS account owner: Alex is primary owner of account 851725533387, TBlank also has access. The
+**AWS account owner:** Alex is primary owner of account 851725533387, TBlank also has access. The
 account is shared with the scouting app (`ScoutingBackendStack*`). Ask its owners
 before running `cdk bootstrap` or adding an account-wide budget.
 
@@ -49,14 +49,11 @@ before running `cdk bootstrap` or adding an account-wide budget.
    TeamXbot2026's entry in `snapshotSources` (`infra/cdk.json`) from `.../ElectricalWeb`
    to `.../main`, run `cdk deploy`, and delete the `ElectricalWeb` branch. Until then the
    site follows the `ElectricalWeb` branch.
-2. **Before the 2027 repo is created** (plan §13.5, §13.6):
-   - Done: FRCRobotTemplate #97 (fix for SeriouslyCommonLib #688) and SeriouslyCommonLib
-     #692 are merged. #692 is released as `20261109.020802`, which the template's `main`
-     already uses.
-   - Review and merge FRCRobotTemplate PR #96. It's rebased on `main` and ready for
-     review.
-   - Create the 2027 repo from the template, and add its snapshot folder to
-     `snapshotSources`.
+2. **The 2027 season repo** (plan §13.6). The library and template work is done
+   (SeriouslyCommonLib #692, FRCRobotTemplate #96 and #97 are merged; plan §13.5), so
+   a repo created from the template already has the exporter and the snapshot workflow.
+   Create it, tag its contract getters with `@ReadyWhen`, and add its snapshot folder to
+   `snapshotSources`.
 3. **Small data fixes** (plan §11):
    - Electrical: review the seeded wiring of the older robots, and check the
      wire-gauge table against the game manual.
