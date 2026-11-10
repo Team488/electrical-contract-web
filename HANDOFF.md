@@ -23,8 +23,8 @@ motor types. The page shows those read-only, and students propose changes to the
 | Passcode and keys | AWS SSM Parameter Store: `/electrical-contract/PASSCODE`, `TOKEN_SECRET`, `SNAPSHOT_KEY` (plan §12.2) |
 | AWS settings | `infra/cdk.json` |
 | Java exporter (2026) | `TeamXbot2026/src/main/java/electrical/report/` |
-| Java exporter (2027 on) | SeriouslyCommonLib PR #692 (`xbot.common.electrical.report`) |
-| Snapshot workflow | `TeamXbot2026/.github/workflows/electrical-snapshots.yml`; for 2027 on, FRCRobotTemplate PR #96 |
+| Java exporter (2027 on) | SeriouslyCommonLib `xbot.common.electrical.report` (#692, release `20261109.020802` and later) |
+| Snapshot workflow | `TeamXbot2026/.github/workflows/electrical-snapshots.yml`; for 2027 on, FRCRobotTemplate (PR #96) |
 | TeamXbot2025 one-off export | `scripts/legacy/teamxbot2025/` |
 
 **AWS account owner: Alex is primary owner of account 851725533387, TBlank also has access. The
@@ -50,14 +50,11 @@ before running `cdk bootstrap` or adding an account-wide budget.
    to `.../main`, run `cdk deploy`, and delete the `ElectricalWeb` branch. Until then the
    site follows the `ElectricalWeb` branch.
 2. **Before the 2027 repo is created** (plan §13.5, §13.6):
-   - Review and merge FRCRobotTemplate PR #97. It moves the template to
-     SeriouslyCommonLib `20261031.5` and fixes `Contract2023` for #688, which removed
-     `CANBusId.RIO` and a `DeviceInfo` constructor. It's independent of the
-     electrical work and builds cleanly now.
-   - Review, merge and release SeriouslyCommonLib PR #692.
-   - Rebase FRCRobotTemplate PR #96 on `main`, set `SeriouslyCommonLibVersion` to the
-     #692 release, take it out of draft and merge. Its checks fail until #692 is on
-     the library's `main`, because CI builds it against that.
+   - Done: FRCRobotTemplate #97 (fix for SeriouslyCommonLib #688) and SeriouslyCommonLib
+     #692 are merged. #692 is released as `20261109.020802`, which the template's `main`
+     already uses.
+   - Review and merge FRCRobotTemplate PR #96. It's rebased on `main` and ready for
+     review.
    - Create the 2027 repo from the template, and add its snapshot folder to
      `snapshotSources`.
 3. **Small data fixes** (plan §11):
